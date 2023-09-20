@@ -3,34 +3,30 @@ CREATE DATABASE employee_tracker_db;
 
 USE employee_tracker_db
 
-CREATE TABLE departments
-    id INT NOT NULL AUTO_INCREMENT,
+CREATE TABLE departments (
+    id INT AUTO_INCREMENT,
     dpmt_name VARCHAR(30),
     PRIMARY KEY (id)
+);
 
-
-CREATE TABLE roles
-    id INT NOT NULL PRIMARY KEY,
+CREATE TABLE roles (
+    id INT AUTO_INCREMENT,
     title VARCHAR(30),
     salary DECIMAL,
-    department_id INT,
-    FOREIGN KEY (department_id)
-    REFERENCES department(id)
-    ON DELETE SET NULL
+    departments_id INT,
+    FOREIGN KEY (departments_id)
+    REFERENCES departments(id)
+    ON DELETE SET NULL,
+    PRIMARY KEY (id)
+);
 
-CREATE TABLE employees
-    id INT NOT NULL PRIMARY KEY,
+CREATE TABLE employees (
+    id INT NOT NULL AUTO_INCREMENT,
     first_name VARCHAR(30),
     last_name VARCHAR(30),
-    role_id INT,
-    is_manager BOOLEAN DEFAULT FALSE,
-    manager_id INT DEFAULT 0,
-    FOREIGN KEY (role_id)
-    REFERENCES role(id)
+    roles_id INT,
+    FOREIGN KEY (roles_id)
+    REFERENCES roles(id)
     ON DELETE SET NULL,
-    FOREIGN KEY (manager_id)
-    REFERENCES manager(id)
-    ON DELETE SET NULL
-
--- CREATE TABLE salaries
---     id INT NOT NULL PRIMARY KEY
+    PRIMARY KEY (id)
+);
