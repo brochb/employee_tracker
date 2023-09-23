@@ -27,8 +27,7 @@ INSERT INTO
         last_name,
         roles_id,
         departments_id,
-        manager_id,
-        is_manager
+        manager_id
     )
 VALUES
     ('John', 'Dee', 1, 1, 1, true),

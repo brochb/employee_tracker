@@ -26,7 +26,6 @@ CREATE TABLE employees (
     last_name VARCHAR(30),
     roles_id INT,
     manager_id INT,
-    is_manager BOOLEAN DEFAULT false,
     FOREIGN KEY (roles_id)
     REFERENCES roles(id)
     ON DELETE SET NULL,
