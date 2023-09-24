@@ -25,13 +25,13 @@ INSERT INTO
     employees (
         first_name,
         last_name,
+        manager_id,
         roles_id,
-        departments_id,
-        manager_id
+        departments_id
     )
 VALUES
-    ('John', 'Dee', 1, 1, 1, true),
-    ('John', 'Anderson', 2, 2, 1, true),
-    ('Gary', 'Anderson', 3, 3, 1, true),
-    ('Huifta', 'Gunners', 4, 4, 1, true),
-    ('Melody', 'Gunners', 5, 4, 1, true);
+    ('John', 'Dee', 1, 1, 1),
+    ('John', 'Anderson', 2, 1, 2),
+    ('Gary', 'Anderson', 3, 1, 3),
+    ('Huifta', 'Gunners', 4, 1, 4),
+    ('Melody', 'Gunners', 5, 1, 4);

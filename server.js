@@ -1,22 +1,8 @@
 const figlet = require('figlet');
-const inquirer = require('inquirer');
 const mysql = require('mysql2');
+const inquirer = require('inquirer');
 
 const PORT = process.env.PORT || 3001;
-
-// Connect to database
-const db = mysql.createConnection(
-    {
-        host: 'localhost',
-        user: 'root',
-        password: 'poop101',
-        database: 'employee_tracker_db'
-    },
-    console.log(`Connected to the employee_tracker_db database.`)
-);
-
-console.log(figlet.textSync('Good Employee Tracker'))
-promptUser();
 
 const userPrompt = () => {
     inquirer.prompt([
@@ -88,6 +74,18 @@ const userPrompt = () => {
             }
         });
 };
+
+const db = mysql.createConnection(
+    {
+        host: 'localhost',
+        user: 'root',
+        password: 'poop101',
+        database: 'employee_tracker_db'
+    },
+    console.log(`Connected to the employee_tracker_db database.`),
+    console.log(figlet.textSync('Good Employee Tracker')),
+userPrompt()
+);
 
 // View all Departments, Roles, Employees
 const viewAllDepartments = () => {
