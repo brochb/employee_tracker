@@ -1,8 +1,30 @@
 const figlet = require('figlet');
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
+const express = require('express')
 
 const PORT = process.env.PORT || 3001;
+const app = express()
+
+app.use(express.json());
+
+const db = mysql.createConnection(
+    {
+        host: 'localhost',
+        user: process.env.USER_NAME,
+        password: process.env.USER_PASSWORD,
+        database: process.env.DB_NAME
+    });
+
+db.connect((err) => {
+    if (err) {
+        console.error('Error connecting to the database', err);
+        return;
+    }
+    console.log(`Connected to the employee_tracker_db database.`),
+        console.log(figlet.textSync('Good Employee Tracker'));
+    userPrompt()
+});
 
 const userPrompt = () => {
     inquirer.prompt([
@@ -75,25 +97,14 @@ const userPrompt = () => {
         });
 };
 
-const db = mysql.createConnection(
-    {
-        host: 'localhost',
-        user: 'root',
-        password: 'poop101',
-        database: 'employee_tracker_db'
-    },
-    console.log(`Connected to the employee_tracker_db database.`),
-    console.log(figlet.textSync('Good Employee Tracker')),
-userPrompt()
-);
-
 // View all Departments, Roles, Employees
 const viewAllDepartments = () => {
     const sql = `SELECT department.id AS id, department.department_name AS department FROM department`;
-    db.Promise().query(sql, (error, response) => {
-        if (error) throw error;
+    db.promise().query(sql, (error, response) => {
+        if (error) {
+            console.error("Error viewing all departments")
+        };
         console.table(response);
-
         userPrompt();
     });
 };
@@ -102,7 +113,7 @@ const viewAllRoles = () => {
     const sql = `SELECT role.id, role.title, department.department_name AS department
                   FROM role
                   INNER JOIN department ON role.department_id = department.id`;
-    db.Promise().query(sql, (error, response) => {
+    db.promise().query(sql, (error, response) => {
         if (error) throw error;
         console.table(response)
         userPrompt();
