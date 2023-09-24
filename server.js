@@ -1,12 +1,14 @@
 const figlet = require('figlet');
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
-const express = require('express')
+const dotenv = require('dotenv').config()
+// const { response } = require('express');
+// const express = require('express')
 
-const PORT = process.env.PORT || 3001;
-const app = express()
+// const PORT = process.env.PORT || 3001;
+// const app = express()
 
-app.use(express.json());
+// app.use(express.json());
 
 const db = mysql.createConnection(
     {
@@ -50,41 +52,40 @@ const userPrompt = () => {
         .then((answers) => {
             const { choices } = answers;
 
-            if (choices === 'View All Employees') {
-                viewAllEmployees();
-            }
-
             if (choices === 'View All Departments') {
                 viewAllDepartments();
             }
 
-            if (choices === 'Add Employee') {
-                addEmployee();
-            }
-
-            if (choices === 'Remove Employee') {
-                removeEmployee();
-            }
-
-            if (choices === 'Update Employee Role') {
-                updateEmployeeRole();
-            }
-
-
             if (choices === 'View All Roles') {
                 viewAllRoles();
+            }
+
+            if (choices === 'View All Employees') {
+                viewAllEmployees();
+            }
+
+            if (choices === 'Add Department') {
+                addDepartment();
             }
 
             if (choices === 'Add Role') {
                 addRole();
             }
 
-            if (choices === 'Remove Role') {
-                removeRole();
+            if (choices === 'Add Employee') {
+                addEmployee();
             }
 
-            if (choices === 'Add Department') {
-                addDepartment();
+            if (choices === 'Update Employee Role') {
+                updateEmployeeRole();
+            }
+
+            if (choices === 'Remove Employee') {
+                removeEmployee();
+            }
+
+            if (choices === 'Remove Role') {
+                removeRole();
             }
 
             if (choices === 'Remove Department') {
@@ -92,51 +93,62 @@ const userPrompt = () => {
             }
 
             if (choices === 'Exit') {
-                db.end();
+                db.end()
+                return;
             }
         });
 };
 
 // View all Departments, Roles, Employees
 const viewAllDepartments = () => {
-    const sql = `SELECT department.id AS id, department.department_name AS department FROM department`;
-    db.promise().query(sql, (error, response) => {
-        if (error) {
-            console.error("Error viewing all departments")
-        };
-        console.table(response);
+    const sql = `SELECT departments.id AS 'ID', departments.dpmt_name AS 'Departments' FROM departments`;
+    db.query(sql, (err, response) => {
+        if (err) {
+            console.error('Error querying departments:', err);
+        } else {
+            console.table(response);
+        }
         userPrompt();
     });
 };
 
+
 const viewAllRoles = () => {
-    const sql = `SELECT role.id, role.title, department.department_name AS department
-                  FROM role
-                  INNER JOIN department ON role.department_id = department.id`;
-    db.promise().query(sql, (error, response) => {
-        if (error) throw error;
-        console.table(response)
+    const sql = `SELECT roles.id AS 'ID', roles.title AS 'Title', departments.dpmt_name AS 'Department'
+                  FROM roles
+                  INNER JOIN departments ON roles.departments_id = departments.id`;
+    db.query(sql, (err, response) => {
+        if (err) {
+            console.error('Error querying roles:', err);
+        } else {
+            console.table(response);
+        }
         userPrompt();
     });
 };
 
 const viewAllEmployees = () => {
-    let sql = `SELECT employee.id, 
-                  employee.first_name, 
-                  employee.last_name, 
-                  role.title, 
-                  department.department_name AS 'department', 
-                  role.salary
-                  FROM employee, role, department 
-                  WHERE department.id = role.department_id 
-                  AND role.id = employee.role_id
-                  ORDER BY employee.id ASC`;
-    db.promise().query(sql, (error, response) => {
-        if (error) throw error;
-        console.table(response);
+    let sql = `SELECT employees.id AS 'ID',
+                  employees.first_name AS 'First Name',
+                  employees.last_name AS 'Last Name',
+                  roles.title AS 'Role',
+                  employees.manager_id AS 'Manager ID',
+                  departments.dpmt_name AS 'Department',
+                  roles.salary AS 'Salary'
+                  FROM employees
+                  JOIN roles ON employees.roles_id = roles.id
+                  JOIN departments ON roles.departments_id = departments.id
+                  ORDER BY employees.id ASC`;
+    db.query(sql, (err, response) => {
+        if (err) {
+            console.error('Error querying Employees');
+        } else {
+            console.table(response);
+        }
         userPrompt();
     });
 };
+
 // Add Department, Role, Employee
 const addDepartment = () => {
     inquirer
@@ -238,6 +250,6 @@ const addEmployee = () => {
 
 
 
-app.listen(PORT, () =>
-    console.log(`Example app listening at http://localhost:${PORT}`)
-);
+// app.listen(PORT, () =>
+//     console.log(`Example app listening at http://localhost:${PORT}`)
+// );

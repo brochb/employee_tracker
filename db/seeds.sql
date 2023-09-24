@@ -18,15 +18,15 @@ VALUES
     ('Director', 0, 1),
     ('Accounting-Head', 200000, 2),
     ('Marketing-Head', 200000, 3),
-    ('Production-Head', 1600000, 4),
+    ('Production-Head', 160000, 4),
     ('Operation-Head', 160000, 4);
 
 INSERT INTO
     employees (
         first_name,
         last_name,
-        manager_id,
         roles_id,
+        manager_id,
         departments_id
     )
 VALUES
