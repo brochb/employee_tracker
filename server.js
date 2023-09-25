@@ -35,9 +35,10 @@ const userPrompt = () => {
                 'Add Role',
                 'Add Employee',
                 'Update Employee Role',
-                'Remove Employee',
-                'Remove Role',
-                'Remove Department',
+                'Change Employee Manager',
+                'Remove Employee (Coming Soon)',
+                'Remove Role (Coming Soon)',
+                'Remove Department (Coming Soon)',
                 'Quit'
             ]
         }
@@ -71,6 +72,10 @@ const userPrompt = () => {
 
             if (choices === 'Update Employee Role') {
                 updateEmployeeRole();
+            }
+
+            if (choices === 'Change Employee Manager') {
+                changeManager();
             }
 
             if (choices === 'Remove Employee') {
@@ -187,30 +192,33 @@ const addDepartment = () => {
 // Add new Role
 const addRole = () => {
     const sql = 'SELECT * FROM departments'
-    db.query(sql, (error, data) => {
-        if (error) {
+    db.query(sql, (err, data) => {
+        if (err) {
             console.error('Error getting departments')
             console.error('Please restart, and try again')
             db.end();
-            process.exit();;
+            process.exit();
         } else {
             let deptChoices = data.map((departments) => ({
                 name: departments.dpmt_name,
             }));
-            deptChoices.push('Create Department');
             inquirer
                 .prompt([
                     {
                         name: 'departmentName',
                         type: 'list',
-                        message: 'Which department is this new role in?',
+                        message:
+                            'Which department is this new role in?',
                         choices: deptChoices
                     }
                 ])
                 .then((answer) => {
                     console.log('Selected departmentName:', answer.departmentName);
-                    if (answer.departmentName === 'Create Department') {
-                        this.addDepartment();
+                    if (err) {
+                        console.error('Error getting departments')
+                        console.error('Please restart, and try again')
+                        db.end();
+                        process.exit();
                     } else {
                         addRoleResume(answer);
                     }
@@ -360,9 +368,7 @@ const updateEmployeeRole = () => {
                     employees.id AS 'ID', 
                     employees.first_name AS 'First Name', 
                     employees.last_name AS 'Last Name', 
-                    roles.id AS 'roles_id',
-                    employees.manager_id AS 'Manager'
-
+                    roles.id AS 'roles_id'
                FROM employees
                JOIN roles ON employees.roles_id = roles.id`;
     db.query(sql, (err, data) => {
@@ -422,9 +428,9 @@ const updateEmployeeRole = () => {
                                         db.end();
                                         process.exit();
                                     } else {
+                                        viewAllEmployees()
                                         console.log('Employee role updated successfully.');
                                         console.log('Please remember to update the employees manager if need be.')
-                                        viewAllEmployees()
                                     }
                                 }
                             );
@@ -434,5 +440,68 @@ const updateEmployeeRole = () => {
         }
     });
 };
+
+// Update Employee Manager
+const changeManager = () => {
+    let sql = `
+        SELECT 
+            employees.id AS 'ID', 
+            employees.first_name AS 'First Name', 
+            employees.last_name AS 'Last Name'
+        FROM employees`;
+
+    db.query(sql, (err, data) => {
+        if (err) {
+            console.error('Error querying employees: ', err.message);
+            console.error('Please restart and try again.');
+            db.end();
+            process.exit();
+        } else {
+            const employeeNames = data.map((employee) => ({
+                name: `${employee['First Name']} ${employee['Last Name']}`,
+                value: employee['ID']
+            }));
+
+            inquirer
+                .prompt([
+                    {
+                        name: 'chosenEmployee',
+                        type: 'list',
+                        message: 'Select an employee to change their manager:',
+                        choices: employeeNames
+                    },
+                    {
+                        name: 'newManager',
+                        type: 'list',
+                        message: 'Select the new manager for the employee:',
+                        choices: employeeNames
+                    }
+                ])
+                .then((answers) => {
+                    const employeeId = answers.chosenEmployee;
+                    const newManagerId = answers.newManager;
+
+                    let sql = `
+                        UPDATE employees
+                        SET employees.manager_id = ?
+                        WHERE employees.id = ?`;
+
+                    db.query(sql, [newManagerId, employeeId], (err) => {
+                        if (err) {
+                            console.error('Error changing manager: ', err.message);
+                            console.error('Please restart and try again.');
+                            db.end();
+                            process.exit();
+                        } else {
+                            console.log('Manager changed successfully.');
+                            viewAllEmployees()
+                            userPrompt()
+                        }
+                    });
+                });
+        }
+    });
+};
+
 
 // Remove Department, Role, Employee
