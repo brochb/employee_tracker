@@ -85,9 +85,11 @@ const userPrompt = () => {
                 removeDepartment();
             }
 
-            if (choices === 'Exit') {
+            if (choices === 'Quit') {
                 db.end();
-                process.exit();
+                console.log('Exit Success! Thank you for using Good Employee Tracker')
+                process.exit()
+
             }
         });
 };
@@ -95,14 +97,14 @@ const userPrompt = () => {
 // View all Departments
 const viewAllDepartments = () => {
     const sql = `SELECT departments.id AS 'ID', departments.dpmt_name AS 'Departments' FROM departments`;
-    db.query(sql, (err, response) => {
+    db.query(sql, (err, data) => {
         if (err) {
             console.error('Error querying departments:')
-            console.error('Please retart, and try again')
+            console.error('Please restart, and try again')
             db.end();
             process.exit();;
         } else {
-            console.table(response);
+            console.table(data);
         }
         userPrompt();
     });
@@ -110,17 +112,19 @@ const viewAllDepartments = () => {
 
 // View all Roles
 const viewAllRoles = () => {
-    const sql = `SELECT roles.id AS 'ID', roles.title AS 'Title', departments.dpmt_name AS 'Department'
+    const sql = `SELECT roles.id AS 'ID',
+                        roles.title AS 'Title',
+                        departments.dpmt_name AS 'Department'
                   FROM roles
                   INNER JOIN departments ON roles.departments_id = departments.id`;
-    db.query(sql, (err, response) => {
+    db.query(sql, (err, data) => {
         if (err) {
             console.error('Error querying roles:', err);
-            console.error('Please retart, and try again')
+            console.error('Please restart, and try again')
             db.end();
             process.exit();
         } else {
-            console.table(response);
+            console.table(data);
         }
         userPrompt();
     });
@@ -141,14 +145,14 @@ const viewAllEmployees = () => {
                   JOIN departments ON roles.departments_id = departments.id
                   LEFT JOIN employees AS m ON employees.manager_id = m.id
                   ORDER BY employees.id ASC`;
-    db.query(sql, (err, response) => {
+    db.query(sql, (err, data) => {
         if (err) {
             console.error('Error querying Employees :', err.message);
             console.error('Please restart, and try again')
             db.end();
             process.exit();
         } else {
-            console.table(response);
+            console.table(data);
         }
         userPrompt();
     });
@@ -166,10 +170,10 @@ const addDepartment = () => {
         ])
         .then((answer) => {
             let sql = `INSERT INTO departments (dpmt_name) VALUES (?)`;
-            db.query(sql, answer.newDepartment, (err, response) => {
+            db.query(sql, answer.newDepartment, (err, data) => {
                 if (err) {
                     console.error('Error adding new Department');
-                    console.error('Please retart, and try again')
+                    console.error('Please restart, and try again')
                     db.end();
                     process.exit();
                 } else {
@@ -183,14 +187,14 @@ const addDepartment = () => {
 // Add new Role
 const addRole = () => {
     const sql = 'SELECT * FROM departments'
-    db.query(sql, (error, response) => {
+    db.query(sql, (error, data) => {
         if (error) {
             console.error('Error getting departments')
             console.error('Please restart, and try again')
             db.end();
             process.exit();;
         } else {
-            let deptChoices = response.map((departments) => ({
+            let deptChoices = data.map((departments) => ({
                 name: departments.dpmt_name,
             }));
             deptChoices.push('Create Department');
@@ -230,7 +234,7 @@ const addRole = () => {
                         let createdRole = answer.newRole;
                         let departmentId;
 
-                        response.forEach((department) => {
+                        data.forEach((department) => {
                             if (departmentData.departmentName === department.dpmt_name) { departmentId = department.id; }
                         });
 
@@ -240,7 +244,7 @@ const addRole = () => {
                         console.log('SQL Query:', sql);
                         console.log('Query Parameters:', newRole);
 
-                        db.query(sql, newRole, (err) => {
+                        db.query(sql, newRole, (err, data) => {
                             if (err) {
                                 console.error('Error adding new Role: ', err.message);
                                 console.error('Please restart, and try again')
@@ -292,7 +296,7 @@ const addEmployee = () => {
             db.query(selectRole, (err, data) => {
                 if (err) {
                     console.error('Error querying roles');
-                    console.error('Please retart, and try again')
+                    console.error('Please restart, and try again')
                     db.end();
                     process.exit();
                 } else {
@@ -312,7 +316,7 @@ const addEmployee = () => {
                             db.query(managerSql, (err, data) => {
                                 if (err) {
                                     console.error('Error querying Managers');
-                                    console.error('Please retart, and try again')
+                                    console.error('Please restart, and try again')
                                     db.end();
                                     process.exit();
                                 } else {
@@ -330,10 +334,10 @@ const addEmployee = () => {
                                             newName.push(manager);
                                             const sql = `INSERT INTO employees (first_name, last_name, roles_id, manager_id)
                                   VALUES (?, ?, ?, ?)`;
-                                            db.query(sql, newName, (err) => {
+                                            db.query(sql, newName, (err, data) => {
                                                 if (err) {
                                                     console.error('Error creating new Employee');
-                                                    console.error('Please retart, and try again')
+                                                    console.error('Please restart, and try again')
                                                     db.end();
                                                     process.exit();
                                                 } else {
@@ -351,5 +355,84 @@ const addEmployee = () => {
 };
 
 // Update Employee Roll
+const updateEmployeeRole = () => {
+    let sql = `SELECT 
+                    employees.id AS 'ID', 
+                    employees.first_name AS 'First Name', 
+                    employees.last_name AS 'Last Name', 
+                    roles.id AS 'roles_id',
+                    employees.manager_id AS 'Manager'
+
+               FROM employees
+               JOIN roles ON employees.roles_id = roles.id`;
+    db.query(sql, (err, data) => {
+        if (err) {
+            console.error('Error querying roles on line 368: ', err.message);
+            console.error('Please restart, and try again')
+            db.end();
+            process.exit();
+        } else {
+            const employeeNames = data.map((employee) => ({
+                name: `${employee['First Name']} ${employee['Last Name']}`,
+                value: employee['ID']
+            }));
+            let sql = `SELECT roles.id, roles.title FROM roles`;
+            db.query(sql, (err, data) => {
+                if (err) {
+                    console.error('Error querying roles on line 380: ', err.message);
+                    console.error('Please restart, and try again')
+                    db.end();
+                    process.exit();
+                } else {
+                    const roles = data.map(({ id, title }) => ({ name: title, value: id }));
+
+                    console.log('Employee Names: ', employeeNames);
+                    console.log('Roles :', roles)
+                    inquirer
+                        .prompt([
+                            {
+                                name: 'chosenEmployee',
+                                type: 'list',
+                                message: 'Which employee has a new role?',
+                                choices: employeeNames
+                            },
+                            {
+                                name: 'chosenRole',
+                                type: 'list',
+                                message: 'What is their new role?',
+                                choices: roles
+                            }
+                        ])
+                        .then((answer) => {
+                            console.log('Selected Employee:', answer.chosenEmployee);
+                            console.log('Selected Role:', answer.chosenRole);
+
+                            const newRoleID = answer.chosenRole;
+                            const employeeId = answer.chosenEmployee;
+
+                            console.log('New Role ID:', newRoleID);
+                            console.log('Employee ID:', employeeId);
+
+                            let sql = `UPDATE employees SET employees.roles_id = ? WHERE employees.id = ?`;
+                            db.query(
+                                sql, [newRoleID, employeeId], (err) => {
+                                    if (err) {
+                                        console.error('Error updating employee role on line 418 : ', err.message);
+                                        console.error('Please restart, and try again')
+                                        db.end();
+                                        process.exit();
+                                    } else {
+                                        console.log('Employee role updated successfully.');
+                                        console.log('Please remember to update the employees manager if need be.')
+                                        viewAllEmployees()
+                                    }
+                                }
+                            );
+                        });
+                }
+            });
+        }
+    });
+};
 
 // Remove Department, Role, Employee
