@@ -2,13 +2,6 @@ const figlet = require('figlet');
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
 const dotenv = require('dotenv').config()
-// const { response } = require('express');
-// const express = require('express')
-
-// const PORT = process.env.PORT || 3001;
-// const app = express()
-
-// app.use(express.json());
 
 const db = mysql.createConnection(
     {
@@ -68,12 +61,12 @@ const userPrompt = () => {
                 addDepartment();
             }
 
-            if (choices === 'Add Role') {
-                addRole();
-            }
-
             if (choices === 'Add Employee') {
                 addEmployee();
+            }
+
+            if (choices === 'Add Role') {
+                addRole();
             }
 
             if (choices === 'Update Employee Role') {
@@ -93,18 +86,21 @@ const userPrompt = () => {
             }
 
             if (choices === 'Exit') {
-                db.end()
-                return;
+                db.end();
+                process.exit();
             }
         });
 };
 
-// View all Departments, Roles, Employees
+// View all Departments
 const viewAllDepartments = () => {
     const sql = `SELECT departments.id AS 'ID', departments.dpmt_name AS 'Departments' FROM departments`;
     db.query(sql, (err, response) => {
         if (err) {
-            console.error('Error querying departments:', err);
+            console.error('Error querying departments:')
+            console.error('Please retart, and try again')
+            db.end();
+            process.exit();;
         } else {
             console.table(response);
         }
@@ -112,7 +108,7 @@ const viewAllDepartments = () => {
     });
 };
 
-
+// View all Roles
 const viewAllRoles = () => {
     const sql = `SELECT roles.id AS 'ID', roles.title AS 'Title', departments.dpmt_name AS 'Department'
                   FROM roles
@@ -120,6 +116,9 @@ const viewAllRoles = () => {
     db.query(sql, (err, response) => {
         if (err) {
             console.error('Error querying roles:', err);
+            console.error('Please retart, and try again')
+            db.end();
+            process.exit();
         } else {
             console.table(response);
         }
@@ -127,21 +126,27 @@ const viewAllRoles = () => {
     });
 };
 
+// View all Employees
 const viewAllEmployees = () => {
-    let sql = `SELECT employees.id AS 'ID',
+    let sql = `SELECT 
+                  employees.id AS 'ID',
                   employees.first_name AS 'First Name',
                   employees.last_name AS 'Last Name',
                   roles.title AS 'Role',
-                  employees.manager_id AS 'Manager ID',
                   departments.dpmt_name AS 'Department',
+                  CONCAT(m.first_name, ' ', m.last_name) AS 'Manager',
                   roles.salary AS 'Salary'
                   FROM employees
                   JOIN roles ON employees.roles_id = roles.id
                   JOIN departments ON roles.departments_id = departments.id
+                  LEFT JOIN employees AS m ON employees.manager_id = m.id
                   ORDER BY employees.id ASC`;
     db.query(sql, (err, response) => {
         if (err) {
-            console.error('Error querying Employees');
+            console.error('Error querying Employees :', err.message);
+            console.error('Please restart, and try again')
+            db.end();
+            process.exit();
         } else {
             console.table(response);
         }
@@ -149,7 +154,7 @@ const viewAllEmployees = () => {
     });
 };
 
-// Add Department, Role, Employee
+// Add new Departmente
 const addDepartment = () => {
     inquirer
         .prompt([
@@ -160,15 +165,98 @@ const addDepartment = () => {
             }
         ])
         .then((answer) => {
-            let sql = `INSERT INTO department (department_name) VALUES (?)`;
-            db.query(sql, answer.newDepartment, (error, response) => {
-                if (error) throw error;
-                console.log()
-                viewAllDepartments();
+            let sql = `INSERT INTO departments (dpmt_name) VALUES (?)`;
+            db.query(sql, answer.newDepartment, (err, response) => {
+                if (err) {
+                    console.error('Error adding new Department');
+                    console.error('Please retart, and try again')
+                    db.end();
+                    process.exit();
+                } else {
+                    console.log('New Department successfully added')
+                    viewAllDepartments();
+                }
             });
         });
 };
 
+// Add new Role
+const addRole = () => {
+    const sql = 'SELECT * FROM departments'
+    db.query(sql, (error, response) => {
+        if (error) {
+            console.error('Error getting departments')
+            console.error('Please restart, and try again')
+            db.end();
+            process.exit();;
+        } else {
+            let deptChoices = response.map((departments) => ({
+                name: departments.dpmt_name,
+            }));
+            deptChoices.push('Create Department');
+            inquirer
+                .prompt([
+                    {
+                        name: 'departmentName',
+                        type: 'list',
+                        message: 'Which department is this new role in?',
+                        choices: deptChoices
+                    }
+                ])
+                .then((answer) => {
+                    console.log('Selected departmentName:', answer.departmentName);
+                    if (answer.departmentName === 'Create Department') {
+                        this.addDepartment();
+                    } else {
+                        addRoleResume(answer);
+                    }
+                });
+
+            const addRoleResume = (departmentData) => {
+                inquirer
+                    .prompt([
+                        {
+                            name: 'newRole',
+                            type: 'input',
+                            message: 'What is the name of your new role?'
+                        },
+                        {
+                            name: 'salary',
+                            type: 'input',
+                            message: 'What is the salary of this new role?'
+                        }
+                    ])
+                    .then((answer) => {
+                        let createdRole = answer.newRole;
+                        let departmentId;
+
+                        response.forEach((department) => {
+                            if (departmentData.departmentName === department.dpmt_name) { departmentId = department.id; }
+                        });
+
+                        let sql = `INSERT INTO roles (title, salary, departments_id) VALUES (?, ?, ?)`;
+                        let newRole = [createdRole, answer.salary, departmentId];
+
+                        console.log('SQL Query:', sql);
+                        console.log('Query Parameters:', newRole);
+
+                        db.query(sql, newRole, (err) => {
+                            if (err) {
+                                console.error('Error adding new Role: ', err.message);
+                                console.error('Please restart, and try again')
+                                db.end();
+                                process.exit();
+                            } else {
+                                viewAllRoles();
+                            }
+                        });
+                    });
+            };
+        }
+    });
+};
+
+// Add new Employee
 const addEmployee = () => {
     inquirer.prompt([
         {
@@ -199,47 +287,65 @@ const addEmployee = () => {
         }
     ])
         .then(answer => {
-            const crit = [answer.firstName, answer.lastName]
-            const roleSql = `SELECT role.id, role.title FROM role`;
-            db.promise().query(roleSql, (error, data) => {
-                if (error) throw error;
-                const roles = data.map(({ id, title }) => ({ name: title, value: id }));
-                inquirer.prompt([
-                    {
-                        type: 'list',
-                        name: 'role',
-                        message: "What is the employee's role?",
-                        choices: roles
-                    }
-                ])
-                    .then(roleChoice => {
-                        const role = roleChoice.role;
-                        crit.push(role);
-                        const managerSql = `SELECT * FROM employee`;
-                        db.promise().query(managerSql, (error, data) => {
-                            if (error) throw error;
-                            const managers = data.map(({ id, first_name, last_name }) => ({ name: first_name + " " + last_name, value: id }));
-                            inquirer.prompt([
-                                {
-                                    type: 'list',
-                                    name: 'manager',
-                                    message: "Who is the employee's manager?",
-                                    choices: managers
-                                }
-                            ])
-                                .then(managerChoice => {
-                                    const manager = managerChoice.manager;
-                                    crit.push(manager);
-                                    const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+            const newName = [answer.firstName, answer.lastName]
+            const selectRole = `SELECT roles.id, roles.title FROM roles`;
+            db.query(selectRole, (err, data) => {
+                if (err) {
+                    console.error('Error querying roles');
+                    console.error('Please retart, and try again')
+                    db.end();
+                    process.exit();
+                } else {
+                    const roles = data.map(({ id, title }) => ({ name: title, value: id }));
+                    inquirer.prompt([
+                        {
+                            type: 'list',
+                            name: 'role',
+                            message: "What is the employee's role?",
+                            choices: roles
+                        }
+                    ])
+                        .then(roleChoice => {
+                            const role = roleChoice.role;
+                            newName.push(role);
+                            const managerSql = `SELECT * FROM employees`;
+                            db.query(managerSql, (err, data) => {
+                                if (err) {
+                                    console.error('Error querying Managers');
+                                    console.error('Please retart, and try again')
+                                    db.end();
+                                    process.exit();
+                                } else {
+                                    const managers = data.map(({ id, first_name, last_name }) => ({ name: first_name + " " + last_name, value: id }));
+                                    inquirer.prompt([
+                                        {
+                                            type: 'list',
+                                            name: 'manager',
+                                            message: "Who is the employee's manager?",
+                                            choices: managers
+                                        }
+                                    ])
+                                        .then(managerChoice => {
+                                            const manager = managerChoice.manager;
+                                            newName.push(manager);
+                                            const sql = `INSERT INTO employees (first_name, last_name, roles_id, manager_id)
                                   VALUES (?, ?, ?, ?)`;
-                                    db.query(sql, crit, (error) => {
-                                        if (error) throw error;
-                                        console.log("Employee has been added!")
-                                        viewAllEmployees();
-                                    });
-                                });
+                                            db.query(sql, newName, (err) => {
+                                                if (err) {
+                                                    console.error('Error creating new Employee');
+                                                    console.error('Please retart, and try again')
+                                                    db.end();
+                                                    process.exit();
+                                                } else {
+                                                    console.log("Employee has been added!")
+                                                    viewAllEmployees()
+                                                }
+                                            });
+                                        });
+                                }
+                            });
                         });
-                    });
+                }
             });
         });
 };
@@ -247,9 +353,3 @@ const addEmployee = () => {
 // Update Employee Roll
 
 // Remove Department, Role, Employee
-
-
-
-// app.listen(PORT, () =>
-//     console.log(`Example app listening at http://localhost:${PORT}`)
-// );
