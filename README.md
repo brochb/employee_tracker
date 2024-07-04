@@ -32,13 +32,6 @@
   Use the arrow keys to navigate through the program, and if you encounter any errors, the program will restart. <br>
   This will start you from the beginning without affecting any of the databases, nor their respective tables.
 
-
-
-
-
-  In addition to the above resources, please refer to this video of usage which can be found here:<br>
-  https://drive.google.com/file/d/1QqkPYEmMypHGnFHPgWYAXI9jYvwebT7t/view
-
   ## Contributing
   Please fork off repo, create a new branch, and push changes to the new branch on the repo. Await merge request completion, you will be notified when you can pull main, and close your local branch.
 
